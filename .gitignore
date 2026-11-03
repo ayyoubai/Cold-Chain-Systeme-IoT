@@ -1,0 +1,33 @@
+
+# Environnement virtuel Python
+.venv/
+venv/
+env/
+
+# Fichiers Python temporaires
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Base de données locale
+db.sqlite3
+db.sqlite3-journal
+
+# Variables d'environnement et secrets
+.env
+.env.*
+
+# Fichiers IDE
+.idea/
+.vscode/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers de logs
+*.log
+
+# Fichiers temporaires
+*.tmp
+*.bak
