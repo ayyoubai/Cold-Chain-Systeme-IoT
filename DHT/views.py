@@ -1,10 +1,5 @@
-from django.shortcuts import render
-from django.http import HttpResponse, FileResponse
 import os
-from django.shortcuts import render
-
-def dashboard(request):
-    return render(request, 'dashboard.html')
+from django.http import HttpResponse, FileResponse
 
 
 def test(request):
@@ -14,7 +9,6 @@ def test(request):
 def dashboard(request):
     file_path = os.path.join(
         os.path.dirname(__file__),
-        'dashboard.html'
+        'static', 'DHT', 'dashboard.html'
     )
-
-    return FileResponse(open(file_path, 'rb'))
+    return FileResponse(open(file_path, 'rb'), content_type='text/html')
