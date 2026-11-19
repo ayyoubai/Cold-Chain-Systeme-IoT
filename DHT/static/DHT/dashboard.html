@@ -1,0 +1,951 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>IoT Dashboard - DHT11</title>
+
+    <!-- Bibliothèque Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .dashboard {
+            max-width: 1100px;
+            margin: auto;
+            padding: 50px 25px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 45px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #0f172a;
+        }
+
+        .description {
+            color: #64748b;
+        }
+
+        .connection {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: orange;
+            border-radius: 50%;
+        }
+
+        .status-dot.online {
+            background: #16a34a;
+        }
+
+        .status-dot.offline {
+            background: #dc2626;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .sensor-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.09);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .icon-box {
+            width: 55px;
+            height: 55px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 27px;
+        }
+
+        .temperature-icon {
+            background: #fff1e8;
+        }
+
+        .humidity-icon {
+            background: #e0f2fe;
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+
+        .card-header p {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .value-container {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 35px;
+        }
+
+        .sensor-value {
+            font-size: 65px;
+            font-weight: bold;
+            letter-spacing: -3px;
+            color: #ea580c;
+        }
+
+        .humidity-card .sensor-value {
+            color: #0284c7;
+        }
+
+        .unit {
+            font-size: 25px;
+            font-weight: bold;
+            color: #64748b;
+        }
+
+        .card-footer {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-label {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .measurement-time {
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .measurement-icon {
+            font-size: 23px;
+        }
+
+        .information {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 35px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .info-icon {
+            font-size: 25px;
+        }
+
+        .info-item h3 {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .info-item p {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .last-update {
+            text-align: center;
+            margin-top: 30px;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        /* =================================
+           FENETRE DU GRAPHIQUE
+        ================================= */
+
+        .chart-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chart-modal.active {
+            display: flex;
+        }
+
+        .chart-container {
+            background: white;
+            width: 100%;
+            max-width: 950px;
+            padding: 30px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .chart-header h2 {
+            font-size: 22px;
+            color: #0f172a;
+        }
+
+        .close-chart {
+            border: none;
+            background: #f1f5f9;
+            color: #334155;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        .close-chart:hover {
+            background: #e2e8f0;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .chart-info {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        @media(max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .information {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 25px;
+            }
+
+            .chart-container {
+                padding: 18px;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            .chart-header h2 {
+                font-size: 17px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+
+        <header class="header">
+
+            <div>
+                <p class="subtitle">SYSTÈME DE SURVEILLANCE IOT</p>
+
+                <h1>Dashboard Monitoring</h1>
+
+                <p class="description">
+                    Surveillance en temps réel avec le capteur DHT11.
+                </p>
+            </div>
+
+            <div class="connection">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="connectionStatus">Connexion...</span>
+            </div>
+
+        </header>
+
+
+        <main>
+
+            <section class="cards-container">
+
+                <!-- CARTE TEMPERATURE -->
+
+                <article class="sensor-card" id="temperatureCard">
+
+                    <div class="card-header">
+
+                        <div class="icon-box temperature-icon">
+                            🌡️
+                        </div>
+
+                        <div>
+                            <h2>Température</h2>
+                            <p>Capteur DHT11</p>
+                        </div>
+
+                    </div>
+
+                    <div class="value-container">
+
+                        <span class="sensor-value" id="temperatureValue">
+                            --.-
+                        </span>
+
+                        <span class="unit">°C</span>
+
+                    </div>
+
+                    <div class="card-footer">
+
+                        <div>
+                            <span class="footer-label">
+                                Date et heure de la mesure
+                            </span>
+
+                            <p class="measurement-time" id="temperatureTime">
+                                En attente...
+                            </p>
+                        </div>
+
+                        <span class="measurement-icon">⏱️</span>
+
+                    </div>
+
+                </article>
+
+
+                <!-- CARTE HUMIDITE -->
+
+                <article class="sensor-card humidity-card" id="humidityCard">
+
+                    <div class="card-header">
+
+                        <div class="icon-box humidity-icon">
+                            💧
+                        </div>
+
+                        <div>
+                            <h2>Humidité</h2>
+                            <p>Capteur DHT11</p>
+                        </div>
+
+                    </div>
+
+                    <div class="value-container">
+
+                        <span class="sensor-value" id="humidityValue">
+                            --
+                        </span>
+
+                        <span class="unit">%</span>
+
+                    </div>
+
+                    <div class="card-footer">
+
+                        <div>
+                            <span class="footer-label">
+                                Date et heure de la mesure
+                            </span>
+
+                            <p class="measurement-time" id="humidityTime">
+                                En attente...
+                            </p>
+                        </div>
+
+                        <span class="measurement-icon">⏱️</span>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <section class="information">
+
+                <div class="info-item">
+                    <span class="info-icon">📡</span>
+
+                    <div>
+                        <h3>Capteur</h3>
+                        <p>DHT11 - ESP8266</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-icon">🔄</span>
+
+                    <div>
+                        <h3>Actualisation</h3>
+                        <p>Toutes les 10 secondes</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-icon">🗄️</span>
+
+                    <div>
+                        <h3>Base de données</h3>
+                        <p>SQLite - Django</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <p class="last-update" id="lastUpdate">
+                En attente des données...
+            </p>
+
+        </main>
+
+
+        <!-- FENETRE GRAPHIQUE -->
+
+        <div class="chart-modal" id="chartModal">
+
+            <div class="chart-container">
+
+                <div class="chart-header">
+
+                    <h2 id="chartTitle">
+                        Historique des mesures
+                    </h2>
+
+                    <button
+                        class="close-chart"
+                        id="closeChart"
+                        aria-label="Fermer le graphique">
+                        &times;
+                    </button>
+
+                </div>
+
+                <div class="chart-wrapper">
+
+                    <canvas id="sensorChart"></canvas>
+
+                </div>
+
+                <p class="chart-info" id="chartInfo">
+                    Historique des mesures enregistrées dans SQLite.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const API_URL = "/list/";
+
+        const temperatureValue =
+            document.getElementById("temperatureValue");
+
+        const humidityValue =
+            document.getElementById("humidityValue");
+
+        const temperatureTime =
+            document.getElementById("temperatureTime");
+
+        const humidityTime =
+            document.getElementById("humidityTime");
+
+        const connectionStatus =
+            document.getElementById("connectionStatus");
+
+        const statusDot =
+            document.getElementById("statusDot");
+
+        const lastUpdate =
+            document.getElementById("lastUpdate");
+
+
+        // =================================
+        // HISTORIQUE DES MESURES
+        // =================================
+
+        let sensorHistory = [];
+
+        let sensorChart = null;
+
+
+        // Formater la date et l'heure
+        function formatDate(dateValue) {
+
+            const date = new Date(dateValue);
+
+            if (isNaN(date.getTime())) {
+                return "Date indisponible";
+            }
+
+            return date.toLocaleString("fr-MA", {
+                timeZone: "Africa/Casablanca",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            });
+
+        }
+
+
+        // État de connexion
+        function setConnectionStatus(connected) {
+
+            if (connected) {
+
+                connectionStatus.textContent = "Connecté";
+
+                statusDot.classList.remove("offline");
+                statusDot.classList.add("online");
+
+            } else {
+
+                connectionStatus.textContent = "Déconnecté";
+
+                statusDot.classList.remove("online");
+                statusDot.classList.add("offline");
+
+            }
+
+        }
+
+
+        // =================================
+        // RECUPERATION DES DONNEES DJANGO
+        // =================================
+
+        async function loadSensorData() {
+
+            try {
+
+                const response = await fetch(API_URL, {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Erreur API Django");
+                }
+
+                const result = await response.json();
+
+                if (!result.data || result.data.length === 0) {
+
+                    sensorHistory = [];
+
+                    temperatureValue.textContent = "--.-";
+                    humidityValue.textContent = "--";
+
+                    temperatureTime.textContent = "Aucune mesure";
+                    humidityTime.textContent = "Aucune mesure";
+
+                    setConnectionStatus(true);
+
+                    lastUpdate.textContent =
+                        "Aucune donnée disponible.";
+
+                    return;
+                }
+
+                // Conserver toutes les mesures enregistrées
+                sensorHistory = result.data;
+
+                // Première mesure = dernière mesure enregistrée
+                const latestMeasurement = result.data[0];
+
+                const temperature = latestMeasurement.temp;
+                const humidity = latestMeasurement.hum;
+                const date = latestMeasurement.dt;
+
+                // Afficher température
+                temperatureValue.textContent =
+                    temperature !== null && temperature !== undefined
+                        ? Number(temperature).toFixed(1)
+                        : "--.-";
+
+                // Afficher humidité
+                humidityValue.textContent =
+                    humidity !== null && humidity !== undefined
+                        ? Number(humidity).toFixed(1)
+                        : "--";
+
+                // Afficher la date et l'heure de la mesure
+                temperatureTime.textContent = formatDate(date);
+
+                humidityTime.textContent = formatDate(date);
+
+                setConnectionStatus(true);
+
+                lastUpdate.textContent =
+                    "Dernière actualisation : " +
+                    new Date().toLocaleTimeString("fr-MA", {
+                        timeZone: "Africa/Casablanca",
+                        hour12: false
+                    });
+
+            } catch (error) {
+
+                console.error("Erreur :", error);
+
+                setConnectionStatus(false);
+
+                lastUpdate.textContent =
+                    "Impossible de récupérer les données du serveur.";
+
+            }
+
+        }
+
+
+        // =================================
+        // AFFICHER LE GRAPHIQUE
+        // =================================
+
+        function showChart(type) {
+
+            // Vérifier si les données existent
+            if (!sensorHistory || sensorHistory.length === 0) {
+
+                alert("Aucune mesure enregistrée dans la base de données !");
+
+                return;
+            }
+
+            // Trier les données par date :
+            // de la plus ancienne à la plus récente
+
+            const measurements = [...sensorHistory]
+                .filter(item =>
+                    item.dt &&
+                    item[type === "temperature" ? "temp" : "hum"] !== null &&
+                    item[type === "temperature" ? "temp" : "hum"] !== undefined &&
+                    !isNaN(Number(item[type === "temperature" ? "temp" : "hum"])) &&
+                    !isNaN(new Date(item.dt).getTime())
+                )
+                .sort((a, b) =>
+                    new Date(a.dt) - new Date(b.dt)
+                );
+
+            if (measurements.length === 0) {
+
+                alert("Aucune mesure valide disponible pour ce graphique.");
+
+                return;
+            }
+
+            const isTemperature = type === "temperature";
+
+            // Récupérer les valeurs
+            const values = measurements.map(item =>
+                Number(isTemperature ? item.temp : item.hum)
+            );
+
+            // Récupérer les dates déjà enregistrées
+            const dates = measurements.map(item =>
+                formatDate(item.dt)
+            );
+
+            // Couleurs
+            const color = isTemperature ? "#ea580c" : "#0284c7";
+
+            const backgroundColor = isTemperature
+                ? "rgba(234, 88, 12, 0.12)"
+                : "rgba(2, 132, 199, 0.12)";
+
+            // Titre
+            document.getElementById("chartTitle").textContent =
+                isTemperature
+                    ? "🌡️ Historique de température"
+                    : "💧 Historique d'humidité";
+
+            document.getElementById("chartInfo").textContent =
+                measurements.length +
+                " mesures enregistrées dans SQLite";
+
+            // Afficher la fenêtre
+            document.getElementById("chartModal")
+                .classList.add("active");
+
+            // Détruire l'ancien graphique
+            if (sensorChart !== null) {
+
+                sensorChart.destroy();
+
+            }
+
+            // Créer le graphique
+            const ctx = document.getElementById("sensorChart");
+
+            sensorChart = new Chart(ctx, {
+
+                type: "line",
+
+                data: {
+
+                    labels: dates,
+
+                    datasets: [{
+
+                        label: isTemperature
+                            ? "Température (°C)"
+                            : "Humidité (%)",
+
+                        data: values,
+
+                        borderColor: color,
+
+                        backgroundColor: backgroundColor,
+
+                        borderWidth: 3,
+
+                        fill: true,
+
+                        tension: 0.4,
+
+                        pointRadius: 4,
+
+                        pointHoverRadius: 7,
+
+                        pointBackgroundColor: color
+
+                    }]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    interaction: {
+                        intersect: false,
+                        mode: "index"
+                    },
+
+                    plugins: {
+
+                        legend: {
+                            display: true
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                title: function(items) {
+                                    return items[0].label;
+                                }
+
+                            }
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            title: {
+                                display: true,
+                                text: "Date et heure"
+                            }
+
+                        },
+
+                        y: {
+
+                            beginAtZero: false,
+
+                            title: {
+
+                                display: true,
+
+                                text: isTemperature
+                                    ? "Température (°C)"
+                                    : "Humidité (%)"
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            });
+
+        }
+
+
+        // =================================
+        // EVENEMENTS DES CARTES
+        // =================================
+
+        // Clic sur température
+        document.getElementById("temperatureCard")
+            .addEventListener("click", function() {
+
+                showChart("temperature");
+
+            });
+
+
+        // Clic sur humidité
+        document.getElementById("humidityCard")
+            .addEventListener("click", function() {
+
+                showChart("humidity");
+
+            });
+
+
+        // =================================
+        // FERMER LE GRAPHIQUE
+        // =================================
+
+        const chartModal =
+            document.getElementById("chartModal");
+
+        const closeChart =
+            document.getElementById("closeChart");
+
+
+        // Bouton fermer
+        closeChart.addEventListener("click", function() {
+
+            chartModal.classList.remove("active");
+
+        });
+
+
+        // Cliquer à l'extérieur du graphique
+        chartModal.addEventListener("click", function(event) {
+
+            if (event.target === chartModal) {
+
+                chartModal.classList.remove("active");
+
+            }
+
+        });
+
+
+        // Fermer avec la touche Echap
+        document.addEventListener("keydown", function(event) {
+
+            if (event.key === "Escape") {
+
+                chartModal.classList.remove("active");
+
+            }
+
+        });
+
+
+        // =================================
+        // DEMARRAGE
+        // =================================
+
+        // Première récupération
+        loadSensorData();
+
+        // Actualisation toutes les 10 secondes
+        setInterval(loadSensorData, 10000);
+
+    </script>
+
+</body>
+</html>
