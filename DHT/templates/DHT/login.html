@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - IncidentFlow</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f3f6fb;
+            font-family: 'Inter', Arial, sans-serif;
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .box {
+            background: white;
+            border: 1px solid #e5ebf3;
+            border-radius: 20px;
+            padding: 34px;
+            width: min(410px, 90vw);
+            box-shadow: 0 15px 40px #13243c10;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #16243c;
+        }
+
+        .logo span {
+            color: #2563eb;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #16243c;
+            margin-top: 28px;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 18px 0 7px;
+            color: #334155;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dbe3ef;
+            border-radius: 9px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px #2563eb18;
+        }
+
+        button {
+            margin-top: 22px;
+            background: #2563eb;
+            color: white;
+            border: 0;
+            border-radius: 9px;
+            padding: 13px;
+            width: 100%;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 15px;
+        }
+
+        .errorlist {
+            color: #991b1b;
+            font-size: 13px;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+
+        <div class="logo">
+            ⚡ Incident<span>Flow</span>
+        </div>
+
+        <h1>Bienvenue</h1>
+
+        <p class="description">
+            Connectez-vous à votre espace de supervision.
+        </p>
+
+        {% if form.errors %}
+            <div class="error">
+                Nom d'utilisateur ou mot de passe incorrect.
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            <label for="username">Nom d'utilisateur</label>
+
+            <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Votre nom d'utilisateur"
+                autocomplete="username"
+                required
+                autofocus
+            >
+
+            <label for="password">Mot de passe</label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Votre mot de passe"
+                autocomplete="current-password"
+                required
+            >
+
+            <button type="submit">
+                Se connecter
+            </button>
+
+        </form>
+
+    </div>
+
+</body>
+</html>

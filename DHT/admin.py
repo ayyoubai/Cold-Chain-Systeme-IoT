@@ -1,7 +1,7 @@
 from django.contrib import admin
+from .models import Dht11, Incident, IncidentReceipt, IncidentComment
 
-from DHT import models
-
-admin.site.register(models.Dht11)
-
-# Register your models here.
+admin.site.register(Dht11)
+admin.site.register(Incident)
+admin.site.register(IncidentReceipt)
+admin.site.register(IncidentComment)

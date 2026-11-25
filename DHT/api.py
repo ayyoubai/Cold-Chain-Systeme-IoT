@@ -1,3 +1,4 @@
+
 from .models import Dht11
 from .serializers import DHT11serialize
 
@@ -6,7 +7,6 @@ from rest_framework.response import Response
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import send_mail
 
 import json
 import urllib.request
@@ -69,51 +69,6 @@ def envoyer_telegram(message):
 
 
 # ==================================================
-# FONCTION : ENVOYER UNE ALERTE PAR EMAIL
-# ==================================================
-
-def envoyer_email(message):
-
-    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
-        print("Email : EMAIL_HOST_USER ou EMAIL_HOST_PASSWORD manquant")
-        return False
-
-    try:
-
-        # Le sujet de l'email = la premiere ligne du message
-        sujet = message.split("\n")[0]
-
-        send_mail(
-            sujet,
-            message,
-            settings.EMAIL_HOST_USER,
-            [settings.EMAIL_HOST_USER],
-            fail_silently=False,
-        )
-
-        print("Notification Email envoyee !")
-        return True
-
-    except Exception as e:
-
-        print("Erreur envoi Email :", e)
-        return False
-
-
-# ==================================================
-# FONCTION : ENVOYER L'ALERTE (TELEGRAM + EMAIL)
-# ==================================================
-
-def envoyer_alerte(message):
-
-    telegram_ok = envoyer_telegram(message)
-    email_ok = envoyer_email(message)
-
-    # True si au moins un des deux canaux a fonctionne
-    return telegram_ok or email_ok
-
-
-# ==================================================
 # FONCTION : VERIFIER LES ALERTES
 # ==================================================
 
@@ -134,7 +89,7 @@ def verifier_alertes(temperature, humidite):
                 "Attention : temperature elevee detectee !"
             )
 
-            if envoyer_alerte(message):
+            if envoyer_telegram(message):
                 cache.set("alerte_temperature", True, timeout=None)
 
     else:
@@ -158,7 +113,7 @@ def verifier_alertes(temperature, humidite):
                 "Attention : humidite elevee detectee !"
             )
 
-            if envoyer_alerte(message):
+            if envoyer_telegram(message):
                 cache.set("alerte_humidite", True, timeout=None)
 
     else:
